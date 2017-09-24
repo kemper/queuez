@@ -1,8 +1,8 @@
 class Queuez::Middleware
   include Enumerable
 
-  def initialize
-    @middleware = []
+  def initialize(middleware = [])
+    @middleware = middleware
   end
 
   def each(&block)
@@ -29,5 +29,17 @@ class Queuez::Middleware
   def insert_after(a, b)
     index = @middleware.index(a)
     @middleware.insert(index + 1, b)
+  end
+
+  def call(context)
+    return if @middleware.empty?
+
+    remaining = @middleware.dup
+    current = remaining.shift
+    next_function = lambda do |new_context|
+      middleware = self.class.new(remaining)
+      middleware.call(new_context)
+    end
+    current.new.call(context, &next_function)
   end
 end
