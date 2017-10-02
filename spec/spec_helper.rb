@@ -8,7 +8,18 @@ db_adapter ||= gemfile && gemfile[%r{gemfiles/(.*?)/}] && $1 # rubocop:disable P
 db_adapter ||= "mysql2"
 
 config = YAML.load(File.read("spec/database.yml"))
-ActiveRecord::Base.establish_connection config[db_adapter]
+db_config = config[db_adapter].dup
+database = db_config.delete("database")
+
+ActiveRecord::Base.establish_connection db_config
+begin
+  ActiveRecord::Base.connection.create_database(database)
+rescue => ActiveRecord::StatementInvalid
+  puts "Database exists"
+end
+
+db_config = config[db_adapter].dup
+ActiveRecord::Base.establish_connection db_config
 ActiveRecord::Migration.verbose = false
 
 migration_template = File.open("lib/generators/queuez/templates/migration.rb")
@@ -30,6 +41,10 @@ end
 
 migration_ruby = ERB.new(migration_template.read).result(migration_context.new.get_binding)
 eval(migration_ruby)
+
+ActiveRecord::Schema.define do
+  CreateQueuezJobs.up
+end
 
 # Add this directory so the ActiveSupport autoloading works
 # ActiveSupport::Dependencies.autoload_paths << File.dirname(__FILE__)

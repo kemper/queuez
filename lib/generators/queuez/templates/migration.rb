@@ -11,6 +11,7 @@ class CreateQueuezJobs < ActiveRecord::Migration<%= migration_version %>
       table.string :queue
       table.string :shard
       table.text :last_error
+      table.text :content
 
       table.timestamps null: true
     end
