@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Queuez::Middleware do
+describe Queuez::MiddlewareChain do
   class Middleware1
     def call(context)
       yield(context)

@@ -1,51 +1,13 @@
 require "queuez/version"
-require './lib/queuez/middleware'
 require 'yaml'
 require 'active_record'
 
+require "./lib/queuez/middleware_chain.rb"
+require "./lib/queuez/config.rb"
+Dir["./lib/queuez/*.rb"].sort.each {|file| require file }
+Dir["./lib/queuez/middleware/*.rb"].sort.each {|file| require file }
+
 module Queuez
-
-  class Config
-    def initialize
-      @client_middleware = Queuez::Middleware.new
-      @producer_middleware = Queuez::Middleware.new
-      @consumer_middleware = Queuez::Middleware.new
-      @queues = {}
-    end
-
-    def client_middleware
-      yield @client_middleware
-    end
-
-    def producer_middleware
-      yield @producer_middleware
-    end
-
-    def consumer_middleware
-      yield @consumer_middleware
-    end
-
-    def register_queue(name, klazz)
-      @queues[name.to_s] = klazz
-    end
-
-    def worker_for(queue_name)
-      @queues[queue_name.to_s]
-    end
-
-    def get_client_middleware
-      @client_middleware
-    end
-
-    def get_producer_middleware
-      @producer_middleware
-    end
-
-    def get_consumer_middleware
-      @consumer_middleware
-    end
-  end
-
   @config = Config.new
 
   def self.configure
