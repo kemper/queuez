@@ -1,10 +1,13 @@
 module Queuez
   class Config
+    attr_accessor :worker_class
+
     def initialize
       @client_middleware = Queuez::MiddlewareChain.new
       @producer_middleware = Queuez::MiddlewareChain.new
       @consumer_middleware = Queuez::MiddlewareChain.new
-      @queues = {}
+      @internal_queue = SizedQueue.new(20)
+      @worker_class = nil
     end
 
     def client_middleware
@@ -17,14 +20,6 @@ module Queuez
 
     def consumer_middleware
       yield @consumer_middleware
-    end
-
-    def register_queue(name, klazz)
-      @queues[name.to_s] = klazz
-    end
-
-    def worker_for(queue_name)
-      @queues[queue_name.to_s]
     end
 
     def get_client_middleware
