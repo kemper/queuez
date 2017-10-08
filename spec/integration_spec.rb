@@ -1,3 +1,4 @@
+require 'mysql2'
 require 'spec_helper'
 
 describe "integration" do
@@ -76,20 +77,31 @@ describe "integration" do
       )
     end
 
-    it "delivers work to the something worker" do
-      expect(something_worker).to receive(:work) do |options|
-        expect(options[:content]).to eq("some content")
+    describe "when there is work to do" do
+      before do
+        Queuez::Job.create!(shard: 1, queue: "something", content: "")
+        Queuez::Job.create!(shard: 1, queue: "something_else", content: "")
       end
-      Queuez.enqueue(queue: "something", shard: "some-shard", content: "some content")
-      sleep 3
+
+      it "delivers work to the something worker once" do
+        expect(something_worker).to receive(:work) do |options|
+          expect(options[:job].content).to eq("some other content")
+        end
+        Queuez.enqueue(queue: "something", shard: "some-shard", content: "some content")
+        sleep 10
+      end
+
+      it "delivers work to the something else worker once" do
+        expect(something_else_worker).to receive(:work) do |options|
+          expect(options[:job].content).to eq("some other content")
+        end
+        Queuez.enqueue(queue: "something_else", shard: "some-shard", content: "some other content")
+        sleep 10
+      end
     end
 
-    it "delivers work to the something else worker" do
-      expect(something_else_worker).to receive(:work) do |options|
-        expect(options[:content]).to eq("some other content")
-      end
-      Queuez.enqueue(queue: "something_else", shard: "some-shard", content: "some other content")
-      sleep 3
+    describe "when there is not work to do" do
+      it "calls the middleware chain periodically"
     end
   end
 end

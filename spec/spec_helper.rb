@@ -1,6 +1,7 @@
 $LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
 require 'queuez'
 require 'pry'
+require 'database_cleaner'
 
 db_adapter, gemfile = ENV["ADAPTER"], ENV["BUNDLE_GEMFILE"]
 db_adapter, gemfile = ENV["ADAPTER"], ENV["BUNDLE_GEMFILE"]
@@ -48,3 +49,18 @@ end
 
 # Add this directory so the ActiveSupport autoloading works
 # ActiveSupport::Dependencies.autoload_paths << File.dirname(__FILE__)
+
+RSpec.configure do |config|
+
+  config.before(:suite) do
+    DatabaseCleaner.strategy = :truncation
+    DatabaseCleaner.clean_with(:truncation)
+  end
+
+  config.around(:each) do |example|
+    DatabaseCleaner.cleaning do
+      example.run
+    end
+  end
+
+end

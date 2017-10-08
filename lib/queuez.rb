@@ -16,6 +16,8 @@ module Queuez
 
   def self.config_for(queue_name)
     @configs[queue_name.to_sym] ||= Config.new
+    @configs[queue_name.to_sym].queue = queue_name.to_sym
+    @configs[queue_name.to_sym]
   end
 
   def self.enqueue(options)

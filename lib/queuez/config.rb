@@ -1,6 +1,6 @@
 module Queuez
   class Config
-    attr_accessor :worker_class
+    attr_accessor :worker_class, :production_delay, :queue, :internal_queue, :consumer_delay
 
     def initialize
       @client_middleware = Queuez::MiddlewareChain.new
@@ -8,6 +8,9 @@ module Queuez
       @consumer_middleware = Queuez::MiddlewareChain.new
       @internal_queue = SizedQueue.new(20)
       @worker_class = nil
+      @production_delay = 5
+      @consumer_delay = 5
+      @queue = nil
     end
 
     def client_middleware

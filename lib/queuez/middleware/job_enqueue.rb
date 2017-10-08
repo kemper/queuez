@@ -3,7 +3,7 @@ module Queuez
     class JobEnqueue
       def call(options)
         attributes = options.slice(:content, :queue, :shard)
-        QueuezJob.create!(attributes)
+        Queuez::Job.create!(attributes)
       end
     end
   end
