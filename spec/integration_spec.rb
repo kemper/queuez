@@ -23,7 +23,7 @@ describe "integration" do
   before do
     Queuez.configure(:something) do |config|
       config.client_middleware do |chain|
-        chain.add(Queuez::Middleware::JobEnqueue)
+        chain.add(Queuez::Middleware::CreateBackgroundJob)
       end
       config.producer_middleware do |chain|
         chain.add(Queuez::Middleware::ProduceWork)
@@ -34,7 +34,7 @@ describe "integration" do
     end
     Queuez.configure(:something_else) do |config|
       config.client_middleware do |chain|
-        chain.add(Queuez::Middleware::JobEnqueue)
+        chain.add(Queuez::Middleware::CreateBackgroundJob)
       end
       config.producer_middleware do |chain|
         chain.add(Queuez::Middleware::ProduceWork)
@@ -66,37 +66,49 @@ describe "integration" do
   end
 
   describe "background work" do
+    let(:initializer) do
+      Queuez::Initializer.new.tap do |i|
+        i.initialize!(
+          {
+            queues: [
+              {name: :something},
+              {name: :something_else},
+            ]
+          }
+        )
+      end
+    end
+
     before do
-      Queuez::Initializer.new.initialize!(
-        {
-          queues: [
-            {name: :something},
-            {name: :something_else},
-          ]
-        }
-      )
+      Queuez.clear_config!
+      initializer.start_all
+    end
+
+    after do
+      initializer.stop_all
     end
 
     describe "when there is work to do" do
-      before do
-        Queuez::Job.create!(shard: 1, queue: "something", content: "")
-        Queuez::Job.create!(shard: 1, queue: "something_else", content: "")
-      end
-
       it "delivers work to the something worker once" do
+        call_count = 0
         expect(something_worker).to receive(:work) do |options|
-          expect(options[:job].content).to eq("some other content")
+          call_count += 1
+          expect(options[:job].content).to eq("some content")
         end
         Queuez.enqueue(queue: "something", shard: "some-shard", content: "some content")
-        sleep 10
+        sleep 5
+        expect(call_count).to eq 1
       end
 
       it "delivers work to the something else worker once" do
+        call_count = 0
         expect(something_else_worker).to receive(:work) do |options|
+          call_count += 1
           expect(options[:job].content).to eq("some other content")
         end
-        Queuez.enqueue(queue: "something_else", shard: "some-shard", content: "some other content")
-        sleep 10
+        Queuez.enqueue(queue: "something_else", shard: "some-other-shard", content: "some other content")
+        sleep 5
+        expect(call_count).to eq 1
       end
     end
 

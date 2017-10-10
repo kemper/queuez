@@ -63,4 +63,8 @@ RSpec.configure do |config|
     end
   end
 
+  config.after(:each) do
+    Queuez.clear_config!
+  end
+
 end

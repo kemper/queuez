@@ -22,6 +22,10 @@ module Queuez
       @middleware.delete a
     end
 
+    def clear
+      @middleware.clear
+    end
+
     def insert_before(a, b)
       index = @middleware.index(a)
       @middleware.insert(index, b)
@@ -41,6 +45,7 @@ module Queuez
         middleware = self.class.new(remaining)
         middleware.call(new_context)
       end
+      puts "About to call middleware: #{current} with #{context}" if ENV["DEBUG"] == "true"
       current.new.call(context, &next_function)
     end
   end

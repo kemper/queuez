@@ -8,8 +8,8 @@ module Queuez
       @consumer_middleware = Queuez::MiddlewareChain.new
       @internal_queue = SizedQueue.new(20)
       @worker_class = nil
-      @production_delay = 5
-      @consumer_delay = 5
+      @production_delay = 1
+      @consumer_delay = 0
       @queue = nil
     end
 

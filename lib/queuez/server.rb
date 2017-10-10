@@ -1,25 +1,32 @@
 module Queuez
   class Server
-    attr_reader :config, :producer_thread_id, :consumer_thread_id
+    attr_reader :config, :producer_thread, :consumer_thread
 
     def initialize(config)
       @config = config
-      @producer_thread_id = nil
-      @consumer_thread_id = nil
+      @producer_thread = nil
+      @consumer_thread = nil
     end
 
     def start_async
-      puts "start_async"
-      @producer_thread_id = Thread.new do
+      start_producer
+      start_consumer
+    end
+
+    def start_producer
+      @producer_thread = Thread.new do
         begin
-          start_producer
+          run_producer
         rescue Exception => e
           puts [e.message] + e.backtrace
         end
       end
-      @consumer_thread_id = Thread.new do
+    end
+
+    def start_consumer
+      @consumer_thread = Thread.new do
         begin
-          start_consumer
+          run_consumer
         rescue Exception => e
           puts [e.message] + e.backtrace
         end
@@ -27,25 +34,24 @@ module Queuez
     end
 
     #TODO: replace with something that supervises
-    def start_producer
-      puts "start producer"
+    def run_producer
       loop do
-        puts "about to call producer middleware"
         config.get_producer_middleware.call({queue: config.queue})
-        print config.production_delay
         sleep config.production_delay
       end
     end
 
     #TODO: replace with something that supervises
-    def start_consumer
-      puts "start consumer"
+    def run_consumer
       loop do
-        puts "about to call producer middleware"
         config.get_consumer_middleware.call({queue: config.queue})
-        print config.consumer_delay
         sleep config.consumer_delay
       end
+    end
+
+    def stop
+      Thread.kill(producer_thread)
+      Thread.kill(consumer_thread)
     end
   end
 end

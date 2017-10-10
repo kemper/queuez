@@ -1,13 +1,12 @@
 class Queuez::Middleware::ProduceWork
   def call(options)
-    puts "producer called"
-    job = Queuez::Job.where(queue: options[:queue]).first
+    job = Queuez::Job.where(queue: options[:queue], completed: false).first
     if job
-      puts 'FOUND JOB'
+      Queuez.logger.debug "Found work to do for queue: #{job}"
       options[:shard] = job.shard
-      puts job
-      puts job.shard
       yield options
+    else
+      Queuez.logger.debug "Did not find work to do for queue: #{options[:queue]}"
     end
   end
 end

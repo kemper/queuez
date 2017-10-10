@@ -1,6 +1,6 @@
 module Queuez
   module Middleware
-    class JobEnqueue
+    class CreateBackgroundJob
       def call(options)
         attributes = options.slice(:content, :queue, :shard)
         Queuez::Job.create!(attributes)
