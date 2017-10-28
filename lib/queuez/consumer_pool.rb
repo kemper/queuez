@@ -1,21 +1,16 @@
 module Queuez
-  class ThreadPool
-    attr_reader :pool_size, :task, :stopped, :threads
+  class ConsumerPool
+    attr_reader :pool_size, :task, :threads, :queue
 
     def initialize(options)
       @threads = []
       @pool_size = 1
       @task = nil
-      @stopped = false
       set_options(options)
     end
 
     def start
       start_threads
-    end
-
-    def pause
-      stop_threads
     end
 
     def count
@@ -35,43 +30,24 @@ module Queuez
     end
 
     def living_count
-      living.size
-    end
-
-    def update_options(options)
-      set_options(options)
-      stop_threads
-      wait_for_stop
-      perform_maintenance
+      living.count
     end
 
     def perform_maintenance
       threads.reject! { |t| !t.alive? }
-      (@pool_size - threads.size).times do
-        threads << start_thread
+      if @pool_size > threads.size
+        (@pool_size - threads.size).times do
+          threads << start_thread
+        end
       end
     end
 
     protected
 
-    def wait_for_stop
-      loop do
-        if threads.any? &:alive?
-          puts "threads livig"
-          sleep (0.1)
-        else
-          break
-        end
-      end
-    end
-
-    def stop_threads
-      @stopped = true
-    end
-
     def set_options(options)
       @pool_size = options[:pool_size] #if options[:pool_size]
       @task = options[:task] #if options[:task]
+      @queue = options[:queue] if options[:queue]
     end
 
     def start_threads
@@ -83,11 +59,8 @@ module Queuez
     def start_thread
       Thread.new do
         loop do
-          if stopped
-            break
-          else
-            task.call
-          end
+          job = queue.pop
+          task.call(job)
         end
       end
     end
